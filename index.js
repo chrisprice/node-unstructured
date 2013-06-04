@@ -12,7 +12,11 @@ Unstructured.prototype.extractMemberPaths = function(src) {
     var memberPaths = [];
     falafel(src, function(node) {
         if (node.type == 'CallExpression' || node.type == 'NewExpression') {
-            memberPaths.push(node.callee.source());
+            var path = node.callee.source();
+            var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
+            if (matches) {
+                memberPaths.push(matches[0]);
+            }
         }
     });
     return memberPaths;

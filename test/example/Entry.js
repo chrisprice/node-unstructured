@@ -13,3 +13,5 @@ Abd.test();
 a.b.e.Module();
 
 new a.b.f.Module();
+
+a.Static.test();
