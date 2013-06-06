@@ -11,12 +11,20 @@ function Unstructured() {
 Unstructured.prototype.extractMemberPaths = function(src) {
     var memberPaths = [];
     falafel(src, function(node) {
-        if (node.type == 'CallExpression' || node.type == 'NewExpression') {
-            var path = node.callee.source();
-            var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
-            if (matches) {
-                memberPaths.push(matches[0]);
-            }
+        var path;
+        var parent = node.parent;
+        if (node.type == 'Identifier' &&
+            parent.type == 'MemberExpression' &&
+            !parent.visited) {
+            var path = parent.source();
+            parent.visited = true;
+            console.log(path);
+        } else {
+            return;
+        }
+        var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
+        if (matches) {
+            memberPaths.push(matches[0]);
         }
     });
     return memberPaths;

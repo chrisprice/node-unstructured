@@ -3,20 +3,16 @@ var fs = require('fs');
 var test = require('tape');
 
 test('extractMemberPaths', function (t) {
-    t.plan(1);
+    t.plan(2);
 
-    var src = fs.readFileSync(__dirname + '/example/Entry.js', 'utf8');
-    var memberPaths = unstructured.extractMemberPaths(src);
-    t.deepEqual(memberPaths.sort(), [
-        'Abd',
-        'a.Module',
-        'a.Static',
-        'a.b.Module',
-        'a.b.c.Module',
-        'a.b.d.Module',
-        'a.b.e.Module',
-        'a.b.f.Module'
-    ]);
+    t.deepEqual(unstructured.extractMemberPaths('var Module = a.Module'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('Module = a.Module'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('new a.Module'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('new a.Module()'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('a.Module()'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('a.Module.method()'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('a.Module.prop = 1'), ['a.Module']);
+//    t.deepEqual(unstructured.extractMemberPaths('var prop = a.Module.prop'), ['a.Module']);
 });
 
 test('readTree', function (t) {
