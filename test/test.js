@@ -23,13 +23,9 @@ test('readTree', function (t) {
 
     var modules = unstructured.readTree(__dirname + '/example');
     t.deepEqual(Object.keys(modules).sort(), [
-        "Entry",
-        "a.Module",
-        "a.Static",
-        "a.b.Module",
-        "a.b.c.Module",
-        "a.b.d.Module",
-        "a.b.e.Module",
-        "a.b.f.Module"
+        "a.A",
+        "a.B",
+        "a.b.C",
+        "index"
     ]);
 });
