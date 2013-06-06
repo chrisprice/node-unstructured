@@ -11,12 +11,19 @@ function Unstructured() {
 Unstructured.prototype.extractMemberPaths = function(src) {
     var memberPaths = [];
     falafel(src, function(node) {
-        if (node.type == 'CallExpression' || node.type == 'NewExpression') {
-            var path = node.callee.source();
-            var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
-            if (matches) {
-                memberPaths.push(matches[0]);
-            }
+        var path;
+        if (node.type == 'AssignmentExpression') {
+
+        } else if (node.type == 'VariableDeclarator') {
+            console.log(node);
+        } else if (node.type == 'CallExpression' || node.type == 'NewExpression') {
+            path = node.callee.source();
+        } else {
+            return;
+        }
+        var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
+        if (matches) {
+            memberPaths.push(matches[0]);
         }
     });
     return memberPaths;
