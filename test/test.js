@@ -18,14 +18,27 @@ test('extractMemberPaths', function (t) {
     t.deepEqual(unstructured.extractMemberPaths('var prop = a.Module.prop'), ['a.Module']);
 });
 
-test('readTree', function (t) {
+test('readSourceTree', function (t) {
     t.plan(1);
 
-    var modules = unstructured.readTree(__dirname + '/example');
-    t.deepEqual(Object.keys(modules).sort(), [
+    var sourceTree = unstructured.readSourceTree(__dirname + '/example');
+    t.deepEqual(Object.keys(sourceTree).sort(), [
         "a.A",
         "a.B",
         "a.b.C",
         "index"
+    ]);
+});
+
+test('buildSourceList', function (t) {
+    t.plan(1);
+
+    var sourceTree = unstructured.readSourceTree(__dirname + '/example');
+    var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
+    t.deepEqual(sourceList, [
+        __dirname + '/example/a/b/C.js',
+        __dirname + '/example/a/B.js',
+        __dirname + '/example/a/A.js',
+        __dirname + '/example/index.js'
     ]);
 });

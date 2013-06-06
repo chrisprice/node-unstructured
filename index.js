@@ -16,6 +16,28 @@ function Unstructured() {
 
 }
 
+Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
+    var sourceList = [], self = this;
+    (function recurse(filePath) {
+        var source = fs.readFileSync(filePath, 'utf8');
+        self.extractMemberPaths(source)
+            .map(function(dependencyMemberPath) {
+                return sourceTree[dependencyMemberPath];
+            })
+            .filter(function(dependencyFilePath) {
+                return dependencyFilePath;
+            })
+            .filter(function(dependencyFilePath) {
+                return dependencyFilePath != filePath;
+            })
+            .forEach(recurse);
+        if (sourceList.indexOf(filePath) == -1) {
+            sourceList.push(filePath);
+        }
+    } (entryPoint));
+    return sourceList;
+};
+
 Unstructured.prototype.extractMemberPaths = function(src) {
     var memberPaths = [];
     falafel(src, function(node) {
@@ -37,7 +59,7 @@ Unstructured.prototype.extractMemberPaths = function(src) {
     return unique(memberPaths);
 };
 
-Unstructured.prototype.readTree = function(root) {
+Unstructured.prototype.readSourceTree = function(root) {
     var tree = {};
     (function walk(parts) {
         var dirPath = path.join.apply(path, [root].concat(parts));
