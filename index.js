@@ -4,6 +4,14 @@ var path = require('path');
 
 module.exports = new Unstructured();
 
+function unique(strArray) {
+    var obj = {};
+    strArray.forEach(function(str) {
+        obj[str] = true;
+    });
+    return Object.keys(obj);
+}
+
 function Unstructured() {
 
 }
@@ -18,7 +26,6 @@ Unstructured.prototype.extractMemberPaths = function(src) {
             !parent.visited) {
             var path = parent.source();
             parent.visited = true;
-            console.log(path);
         } else {
             return;
         }
@@ -27,7 +34,7 @@ Unstructured.prototype.extractMemberPaths = function(src) {
             memberPaths.push(matches[0]);
         }
     });
-    return memberPaths;
+    return unique(memberPaths);
 };
 
 Unstructured.prototype.readTree = function(root) {

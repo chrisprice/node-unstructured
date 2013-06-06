@@ -3,16 +3,19 @@ var fs = require('fs');
 var test = require('tape');
 
 test('extractMemberPaths', function (t) {
-    t.plan(2);
+    t.plan(10);
 
     t.deepEqual(unstructured.extractMemberPaths('var Module = a.Module'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('Module = a.Module'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('new a.Module'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('new a.Module()'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('a.Module()'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('a.Module.method()'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('a.Module.prop = 1'), ['a.Module']);
-//    t.deepEqual(unstructured.extractMemberPaths('var prop = a.Module.prop'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('var Module = a.b.Module'), ['a.b.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('Module = a.b.Module'), ['a.b.Module']);
+
+    t.deepEqual(unstructured.extractMemberPaths('new a.Module'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('new a.Module()'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.Module()'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.Module.method()'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.Module.prop = 1'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('var prop = a.Module.prop'), ['a.Module']);
 });
 
 test('readTree', function (t) {
