@@ -18,23 +18,29 @@ function Unstructured() {
 
 Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
     var sourceList = [], self = this;
-    (function recurse(filePath) {
-        var source = fs.readFileSync(filePath, 'utf8');
+    (function recurse(module) {
+        var source = fs.readFileSync(module.filePath, 'utf8');
         self.extractMemberPaths(source)
             .map(function(dependencyMemberPath) {
-                return sourceTree[dependencyMemberPath];
+                return {
+                    filePath: sourceTree[dependencyMemberPath],
+                    memberPath: dependencyMemberPath
+                };
             })
-            .filter(function(dependencyFilePath) {
-                return dependencyFilePath;
+            .filter(function(dependency) {
+                return dependency.filePath;
             })
-            .filter(function(dependencyFilePath) {
-                return dependencyFilePath != filePath;
+            .filter(function(dependency) {
+                return dependency.filePath != module.filePath;
             })
             .forEach(recurse);
-        if (sourceList.indexOf(filePath) == -1) {
-            sourceList.push(filePath);
+        if (sourceList.indexOf(module.filePath) == -1) {
+            sourceList.push(module.filePath);
         }
-    } (entryPoint));
+    } ({
+        filePath: entryPoint,
+        memberPath: null
+    }));
     return sourceList;
 };
 
