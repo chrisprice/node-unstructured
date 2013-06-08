@@ -18,6 +18,7 @@
 var falafel = require('falafel');
 var fs = require('fs');
 var path = require('path');
+var combineSourceMap = require('combine-source-map');
 
 module.exports = new Unstructured();
 
@@ -40,7 +41,7 @@ function Unstructured() {
 
 }
 
-Unstructured.prototype.buildSourceList = function(sourceTree, entryPointFilePath) {
+Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
     var sourceList = [], self = this;
     (function recurse(module) {
         var source = fs.readFileSync(module.filePath, 'utf8');
@@ -62,7 +63,7 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPointFilePath
             sourceList.push(module.filePath);
         }
     } ({
-        filePath: entryPointFilePath,
+        filePath: entryPoint,
         memberPath: null
     }));
     return sourceList;
@@ -111,3 +112,14 @@ Unstructured.prototype.readSourceTrees = function(roots) {
         return extend(tree, this.readSourceTree(root));
     }.bind(this), {});
 };
+
+Unstructured.prototype.pack = function(sourceFiles) {
+    var sourceMap = combineSourceMap.create();
+    return sourceFiles.reduce(function(combinedSource, sourceFile) {
+        var source = fs.readFileSync(sourceFile, 'utf8');
+        sourceMap.addFile(
+            { sourceFile: sourceFile, source: source },
+            { line: combinedSource.split('\n').length });
+        return combinedSource + combineSourceMap.removeComments(source) + '\n';
+    }, '') + sourceMap.comment();
+}

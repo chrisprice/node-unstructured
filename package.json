@@ -11,7 +11,8 @@
   "license": "BSD",
   "dependencies": {
     "falafel": "~0.2.1",
-    "walkdir": "0.0.7"
+    "walkdir": "0.0.7",
+    "combine-source-map": "~0.1.2"
   },
   "devDependencies": {
     "tape": "~1.0.2"

@@ -70,3 +70,12 @@ test('buildSourceList from readSourceTrees', function (t) {
         __dirname + '/example/index.js'
     ]);
 });
+
+test('pack from buildSourceList from readSourceTrees', function (t) {
+    t.plan(1);
+
+    var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
+    var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
+    var packed = unstructured.pack(sourceList);
+    t.equal(packed, fs.readFileSync(__dirname + '/example.packed.js', 'utf8'));
+});
