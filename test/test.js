@@ -3,13 +3,14 @@ var fs = require('fs');
 var test = require('tape');
 
 test('extractMemberPaths', function (t) {
-    t.plan(10);
+    t.plan(11);
+
+    t.deepEqual(unstructured.extractMemberPaths('a.Module'), ['a.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.b.Module'), ['a.b.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.CamelCaseModule'), ['a.CamelCaseModule']);
 
     t.deepEqual(unstructured.extractMemberPaths('var Module = a.Module'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('Module = a.Module'), ['a.Module']);
-    t.deepEqual(unstructured.extractMemberPaths('var Module = a.b.Module'), ['a.b.Module']);
-    t.deepEqual(unstructured.extractMemberPaths('Module = a.b.Module'), ['a.b.Module']);
-
     t.deepEqual(unstructured.extractMemberPaths('new a.Module'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('new a.Module()'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('a.Module()'), ['a.Module']);

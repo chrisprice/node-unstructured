@@ -51,7 +51,7 @@ Unstructured.prototype.extractMemberPaths = function(src) {
         } else {
             return;
         }
-        var matches = path.match(/^(?:[a-z]+\.)*[A-Z][a-z]*/);
+        var matches = path.match(/^(?:[a-z]+\.)*[A-Z][A-Za-z]*/);
         if (matches) {
             memberPaths.push(matches[0]);
         }
