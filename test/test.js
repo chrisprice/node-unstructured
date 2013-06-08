@@ -50,10 +50,10 @@ test('buildSourceList from readSourceTree', function (t) {
     var sourceTree = unstructured.readSourceTree(__dirname + '/example');
     var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
     t.deepEqual(sourceList, [
-        __dirname + '/example/a/b/C.js',
-        __dirname + '/example/a/B.js',
-        __dirname + '/example/a/A.js',
-        __dirname + '/example/index.js'
+        { filePath: __dirname + '/example/a/b/C.js', memberPath: 'a.b.C' },
+        { filePath: __dirname + '/example/a/B.js', memberPath: 'a.B' },
+        { filePath: __dirname + '/example/a/A.js', memberPath: 'a.A' },
+        { filePath: __dirname + '/example/index.js', memberPath: null }
     ]);
 });
 
@@ -63,11 +63,11 @@ test('buildSourceList from readSourceTrees', function (t) {
     var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
     var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
     t.deepEqual(sourceList, [
-        __dirname + '/example/a/b/C.js',
-        __dirname + '/example2/a/C.js',
-        __dirname + '/example2/a/B.js',
-        __dirname + '/example/a/A.js',
-        __dirname + '/example/index.js'
+        { filePath: __dirname + '/example/a/b/C.js', memberPath: 'a.b.C' },
+        { filePath: __dirname + '/example2/a/C.js', memberPath: 'a.C' },
+        { filePath: __dirname + '/example2/a/B.js', memberPath: 'a.B' },
+        { filePath: __dirname + '/example/a/A.js', memberPath: 'a.A' },
+        { filePath: __dirname + '/example/index.js', memberPath: null }
     ]);
 });
 
@@ -77,5 +77,6 @@ test('pack from buildSourceList from readSourceTrees', function (t) {
     var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
     var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
     var packed = unstructured.pack(sourceList);
+//    fs.writeFileSync(__dirname + '/example.packed.js', packed, 'utf8');
     t.equal(packed, fs.readFileSync(__dirname + '/example.packed.js', 'utf8'));
 });

@@ -59,8 +59,8 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
                 return dependency.filePath != module.filePath;
             })
             .forEach(recurse);
-        if (sourceList.indexOf(module.filePath) == -1) {
-            sourceList.push(module.filePath);
+        if (!sourceList.some(function(knownModule) { module.filePath == knownModule.filePath; })) {
+            sourceList.push(module);
         }
     } ({
         filePath: entryPoint,
@@ -113,12 +113,20 @@ Unstructured.prototype.readSourceTrees = function(roots) {
     }.bind(this), {});
 };
 
-Unstructured.prototype.pack = function(sourceFiles) {
+Unstructured.prototype.pack = function(sourceList) {
     var sourceMap = combineSourceMap.create();
-    return sourceFiles.reduce(function(combinedSource, sourceFile) {
-        var source = fs.readFileSync(sourceFile, 'utf8');
+    return sourceList.reduce(function(combinedSource, item) {
+        if (item.memberPath) {
+            item.memberPath.split('.').forEach(function (part, i, parts) {
+                if (i < parts.length - 1) {
+                    var namespace = parts.slice(0, i + 1).join('.');
+                    combinedSource += namespace + ' = ' + namespace + ' || {};\n'
+                }
+            });
+        }
+        var source = fs.readFileSync(item.filePath, 'utf8');
         sourceMap.addFile(
-            { sourceFile: sourceFile, source: source },
+            { sourceFile: item.filePath, source: source },
             { line: combinedSource.split('\n').length });
         return combinedSource + combineSourceMap.removeComments(source) + '\n';
     }, '') + sourceMap.comment();
