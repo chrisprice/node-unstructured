@@ -12,11 +12,18 @@ function unique(strArray) {
     return Object.keys(obj);
 }
 
+function extend(target, source) {
+    Object.keys(source).forEach(function(key) {
+        target[key] = source[key];
+    });
+    return target;
+}
+
 function Unstructured() {
 
 }
 
-Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
+Unstructured.prototype.buildSourceList = function(sourceTree, entryPointFilePath) {
     var sourceList = [], self = this;
     (function recurse(module) {
         var source = fs.readFileSync(module.filePath, 'utf8');
@@ -38,7 +45,7 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
             sourceList.push(module.filePath);
         }
     } ({
-        filePath: entryPoint,
+        filePath: entryPointFilePath,
         memberPath: null
     }));
     return sourceList;
@@ -80,4 +87,10 @@ Unstructured.prototype.readSourceTree = function(root) {
         });
     } ([]));
     return tree;
+};
+
+Unstructured.prototype.readSourceTrees = function(roots) {
+    return roots.reduceRight(function(tree, root) {
+        return extend(tree, this.readSourceTree(root));
+    }.bind(this), {});
 };

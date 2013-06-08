@@ -23,15 +23,28 @@ test('readSourceTree', function (t) {
     t.plan(1);
 
     var sourceTree = unstructured.readSourceTree(__dirname + '/example');
-    t.deepEqual(Object.keys(sourceTree).sort(), [
-        "a.A",
-        "a.B",
-        "a.b.C",
-        "index"
-    ]);
+    t.deepEqual(sourceTree, {
+        "a.A": __dirname + '/example/a/A.js',
+        "a.B": __dirname + '/example/a/B.js',
+        "a.b.C": __dirname + '/example/a/b/C.js',
+        "index": __dirname + '/example/index.js'
+    });
 });
 
-test('buildSourceList', function (t) {
+test('readSourceTrees', function (t) {
+    t.plan(1);
+
+    var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
+    t.deepEqual(sourceTree, {
+        "a.A": __dirname + '/example/a/A.js',
+        "a.B": __dirname + '/example2/a/B.js',
+        "a.C": __dirname + '/example2/a/C.js',
+        "a.b.C": __dirname + '/example/a/b/C.js',
+        "index": __dirname + '/example/index.js'
+    });
+});
+
+test('buildSourceList from readSourceTree', function (t) {
     t.plan(1);
 
     var sourceTree = unstructured.readSourceTree(__dirname + '/example');
@@ -39,6 +52,20 @@ test('buildSourceList', function (t) {
     t.deepEqual(sourceList, [
         __dirname + '/example/a/b/C.js',
         __dirname + '/example/a/B.js',
+        __dirname + '/example/a/A.js',
+        __dirname + '/example/index.js'
+    ]);
+});
+
+test('buildSourceList from readSourceTrees', function (t) {
+    t.plan(1);
+
+    var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
+    var sourceList = unstructured.buildSourceList(sourceTree, __dirname + '/example/index.js');
+    t.deepEqual(sourceList, [
+        __dirname + '/example/a/b/C.js',
+        __dirname + '/example2/a/C.js',
+        __dirname + '/example2/a/B.js',
         __dirname + '/example/a/A.js',
         __dirname + '/example/index.js'
     ]);
