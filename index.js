@@ -15,6 +15,7 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+var util = require('util');
 var falafel = require('falafel');
 var fs = require('fs');
 var path = require('path');
@@ -41,9 +42,17 @@ function Unstructured() {
 
 }
 
-Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
+Unstructured.prototype.buildSourceList = function(sourceTree, entryPoints) {
+    if (!util.isArray(entryPoints)) {
+        entryPoints = [entryPoints];
+    }
     var sourceList = [], self = this;
-    (function recurse(module) {
+    entryPoints.map(function(entryPoint) {
+        return {
+            filePath: entryPoint,
+            memberPath: null
+        };
+    }).forEach(function recurse(module) {
         var source = fs.readFileSync(module.filePath, 'utf8');
         self.extractMemberPaths(source)
             .map(function(dependencyMemberPath) {
@@ -62,10 +71,7 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPoint) {
         if (!sourceList.some(function(knownModule) { module.filePath == knownModule.filePath; })) {
             sourceList.push(module);
         }
-    } ({
-        filePath: entryPoint,
-        memberPath: null
-    }));
+    });
     return sourceList;
 };
 

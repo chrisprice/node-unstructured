@@ -71,6 +71,22 @@ test('buildSourceList from readSourceTrees', function (t) {
     ]);
 });
 
+//test('buildSourceList with multiple entryPoints from readSourceTrees', function (t) {
+//    t.plan(1);
+//
+//    var sourceTree = unstructured.readSourceTrees([__dirname + '/example2', __dirname + '/example']);
+//    var sourceList = unstructured.buildSourceList(sourceTree, [__dirname + '/example/index.js',
+//        __dirname + '/example2/index.js']);
+//    t.deepEqual(sourceList, [
+//        { filePath: __dirname + '/example/a/b/C.js', memberPath: 'a.b.C' },
+//        { filePath: __dirname + '/example2/a/C.js', memberPath: 'a.C' },
+//        { filePath: __dirname + '/example2/a/B.js', memberPath: 'a.B' },
+//        { filePath: __dirname + '/example/a/A.js', memberPath: 'a.A' },
+//        { filePath: __dirname + '/example/index.js', memberPath: null },
+//        { filePath: __dirname + '/example2/index.js', memberPath: null }
+//    ]);
+//});
+
 test('pack from buildSourceList from readSourceTrees', function (t) {
     t.plan(1);
 
