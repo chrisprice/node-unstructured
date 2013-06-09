@@ -127,7 +127,7 @@ Unstructured.prototype.pack = function(sourceList) {
         var source = fs.readFileSync(item.filePath, 'utf8');
         sourceMap.addFile(
             { sourceFile: item.filePath, source: source },
-            { line: combinedSource.split('\n').length });
+            { line: combinedSource.split('\n').length - 1 });
         return combinedSource + combineSourceMap.removeComments(source) + '\n';
     }, '') + sourceMap.comment();
 }
