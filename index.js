@@ -68,7 +68,7 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPoints) {
                 return dependency.filePath != module.filePath;
             })
             .forEach(recurse);
-        if (!sourceList.some(function(knownModule) { module.filePath == knownModule.filePath; })) {
+        if (!sourceList.some(function(knownModule) { return module.filePath == knownModule.filePath; })) {
             sourceList.push(module);
         }
     });
