@@ -15,13 +15,14 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 var fs = require('fs');
 var path = require('path');
 var combineSourceMap = require('combine-source-map');
 var parse = require('esprima').parse;
 
-module.exports = new Unstructured();
+module.exports = Unstructured;
 
 function unique(strArray) {
     var obj = {};
@@ -38,44 +39,104 @@ function extend(target, source) {
     return target;
 }
 
-function Unstructured() {
-
+function moduleNameToRelativePath(moduleName) {
+    return moduleName.split('.').join(path.sep) + '.js'
 }
 
-Unstructured.prototype.buildSourceList = function(sourceTree, entryPoints) {
-    if (!util.isArray(entryPoints)) {
-        entryPoints = [entryPoints];
+function Unstructured(sourceFolders, cb) {
+    this.modules = {};
+    this.pending = [];
+    this.sourceFolders = sourceFolders;
+    this.cb = cb;
+}
+
+Unstructured.parse = function( sourceFolders, entryModuleNames, cb ) {
+
+    if (!util.isArray(sourceFolders)) {
+        sourceFolders = [sourceFolders];
     }
-    var sourceList = [], self = this;
-    entryPoints.map(function(entryPoint) {
-        return {
-            filePath: entryPoint,
-            memberPath: null
-        };
-    }).forEach(function recurse(module) {
-        var source = fs.readFileSync(module.filePath, 'utf8');
-        self.extractMemberPaths(source)
-            .map(function(dependencyMemberPath) {
-                return {
-                    filePath: sourceTree[dependencyMemberPath],
-                    memberPath: dependencyMemberPath
-                };
-            })
-            .filter(function(dependency) {
-                return dependency.filePath;
-            })
-            .filter(function(dependency) {
-                return dependency.filePath != module.filePath;
-            })
-            .forEach(recurse);
-        if (!sourceList.some(function(knownModule) { return module.filePath == knownModule.filePath; })) {
-            sourceList.push(module);
-        }
-    });
-    return sourceList;
+
+    if (!util.isArray(entryModuleNames)) {
+        entryModuleNames = [entryModuleNames];
+    }
+
+    var unstructured = new Unstructured( sourceFolders, function( error ) { cb( error, entryModules ); } );
+
+    var entryModules = entryModuleNames.map( function( moduleName ) { return unstructured.lookup( moduleName ) } );
 };
 
-Unstructured.prototype.extractMemberPaths = function( source ) {
+Unstructured.prototype.lookup = function(moduleName) {
+    if (this.modules[moduleName]) {
+        return this.modules[moduleName];
+    }
+
+    var module = this.modules[moduleName] = {
+        name: moduleName,
+        relativePath: moduleNameToRelativePath(moduleName)
+    };
+
+    this.pending.push(module);
+
+    this.findFile( module.relativePath, function( error, absolutePath ) {
+
+        module.absolutePath = absolutePath;
+
+        this.parse( module.name, module.absolutePath, function( error, dependencies ) {
+            if ( error ) {
+                return this.cb( error );
+            }
+
+            module.dependencies = dependencies.map( function( moduleName ) {
+                return this.lookup( moduleName );
+            }, this );
+
+            this.pending.splice(this.pending.indexOf(module), 1);
+
+            if ( this.pending.length == 0 ) {
+                this.cb( null );
+            }
+        }.bind( this ) );
+    }.bind( this ));
+
+    return module;
+};
+
+Unstructured.prototype.findFile = function( relativePath, cb ) {
+    var sourceFolders = this.sourceFolders.slice();
+    (function exists() {
+        var sourceFolder = sourceFolders.shift();
+        if (!sourceFolder) {
+            cb('Not found');
+        }
+        var absolutePath = path.join(sourceFolder, relativePath);
+
+        fs.exists(absolutePath, function(result) {
+            if (result) {
+                cb(null, absolutePath);
+            } else {
+                exists();
+            }
+        });
+    })();
+};
+
+
+Unstructured.prototype.parse = function( moduleName, absolutePath, cb ) {
+
+    fs.readFile( absolutePath, 'utf8', function( error, source ) {
+        if ( error ) {
+            return cb( error );
+        }
+
+        var dependencies = Unstructured.extractMemberPaths( source )
+            // ignore the module's own name
+            .filter( function(name) { return moduleName != name; } )
+
+        cb( null, dependencies );
+    } );
+};
+
+Unstructured.extractMemberPaths = function( source ) {
     var expressions = [];
 
     var ast = parse( source, { range: true } );
@@ -111,29 +172,6 @@ Unstructured.prototype.extractMemberPaths = function( source ) {
     }
 
     return unique( expressions );
-};
-
-Unstructured.prototype.readSourceTree = function(root) {
-    var tree = {};
-    (function walk(parts) {
-        var dirPath = path.join.apply(path, [root].concat(parts));
-        fs.readdirSync(dirPath).map(function(node) {
-            var fullPath = path.join(dirPath, node);
-            var stats = fs.statSync(fullPath);
-            if (stats.isDirectory()) {
-                walk(parts.concat(node));
-            } else if (path.extname(fullPath) == '.js') {
-                tree[parts.concat(path.basename(node, '.js')).join('.')] = fullPath;
-            }
-        });
-    } ([]));
-    return tree;
-};
-
-Unstructured.prototype.readSourceTrees = function(roots) {
-    return roots.reduceRight(function(tree, root) {
-        return extend(tree, this.readSourceTree(root));
-    }.bind(this), {});
 };
 
 Unstructured.prototype.pack = function(sourceList) {
