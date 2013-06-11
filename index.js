@@ -16,10 +16,10 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var util = require('util');
-var falafel = require('falafel');
 var fs = require('fs');
 var path = require('path');
 var combineSourceMap = require('combine-source-map');
+var parse = require('esprima').parse;
 
 module.exports = new Unstructured();
 
@@ -75,25 +75,42 @@ Unstructured.prototype.buildSourceList = function(sourceTree, entryPoints) {
     return sourceList;
 };
 
-Unstructured.prototype.extractMemberPaths = function(src) {
-    var memberPaths = [];
-    falafel(src, function(node) {
-        var path;
-        var parent = node.parent;
-        if (node.type == 'Identifier' &&
-            parent.type == 'MemberExpression' &&
-            !parent.visited) {
-            var path = parent.source();
-            parent.visited = true;
-        } else {
+Unstructured.prototype.extractMemberPaths = function( source ) {
+    var expressions = [];
+
+    var ast = parse( source, { range: true } );
+
+    (function processNode( node ) {
+
+        if ( ! ( node && typeof node.type == 'string' ) )
             return;
+
+        Object.keys( node ).forEach(function( k ) {
+            if ( node.type == 'MemberExpression' ) {
+                expressions.push( source.slice( node.range[0], node.range[1] ) );
+            }
+            else if ( util.isArray( node[k] ) ) {
+                node[k].forEach( processNode );
+            }
+            else {
+                processNode( node[k] );
+            }
+        });
+
+    } (ast));
+
+    for ( var i = expressions.length - 1; i >= 0; i-- ) {
+
+        var matches = expressions[i].match( /^(?:[a-z][a-z0-9]*\.)*[A-Z][A-Za-z0-9]*/ );
+        if (!matches) {
+            expressions.splice( i, 1 );
+        } else {
+            expressions[i] = matches[0];
         }
-        var matches = path.match(/^(?:[a-z]+\.)*[A-Z][A-Za-z]*/);
-        if (matches) {
-            memberPaths.push(matches[0]);
-        }
-    });
-    return unique(memberPaths);
+
+    }
+
+    return unique( expressions );
 };
 
 Unstructured.prototype.readSourceTree = function(root) {
@@ -136,4 +153,4 @@ Unstructured.prototype.pack = function(sourceList) {
             { line: combinedSource.split('\n').length - 1 });
         return combinedSource + combineSourceMap.removeComments(source) + '\n';
     }, '') + sourceMap.comment();
-}
+};

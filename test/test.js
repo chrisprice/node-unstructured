@@ -3,11 +3,13 @@ var fs = require('fs');
 var test = require('tape');
 
 test('extractMemberPaths', function (t) {
-    t.plan(11);
+    t.plan(13);
 
     t.deepEqual(unstructured.extractMemberPaths('a.Module'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('a.b.Module'), ['a.b.Module']);
     t.deepEqual(unstructured.extractMemberPaths('a.CamelCaseModule'), ['a.CamelCaseModule']);
+    t.deepEqual(unstructured.extractMemberPaths('a1.Module'), ['a1.Module']);
+    t.deepEqual(unstructured.extractMemberPaths('a.Module2'), ['a.Module2']);
 
     t.deepEqual(unstructured.extractMemberPaths('var Module = a.Module'), ['a.Module']);
     t.deepEqual(unstructured.extractMemberPaths('Module = a.Module'), ['a.Module']);
