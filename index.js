@@ -60,9 +60,32 @@ Unstructured.parse = function( sourceFolders, entryModuleNames, cb ) {
         entryModuleNames = [entryModuleNames];
     }
 
-    var unstructured = new Unstructured( sourceFolders, function( error ) { cb( error, entryModules ); } );
+    var unstructured = new Unstructured( sourceFolders, function( error ) {
+        cb( error, entryModules, unstructured.resolve( entryModules ) );
+    } );
 
     var entryModules = entryModuleNames.map( function( moduleName ) { return unstructured.lookup( moduleName ) } );
+};
+
+Unstructured.prototype.resolve = function( entryModules ) {
+
+    return ( function resolveInternal( modules ) {
+
+        modules = modules.map( function(module) {
+
+            if ( module.resolved ) {
+                return [];
+            }
+
+            module.resolved = true;
+
+            return resolveInternal( module.dependencies ).concat( module );
+
+        } );
+
+        return Array.prototype.concat.apply([], modules);
+
+    } ( entryModules ));
 };
 
 Unstructured.prototype.lookup = function(moduleName) {
@@ -106,7 +129,7 @@ Unstructured.prototype.findFile = function( relativePath, cb ) {
     (function exists() {
         var sourceFolder = sourceFolders.shift();
         if (!sourceFolder) {
-            cb('Not found');
+            return cb('Not found');
         }
         var absolutePath = path.join(sourceFolder, relativePath);
 
