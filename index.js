@@ -20,9 +20,11 @@ var util = require('util');
 var fs = require('fs');
 var path = require('path');
 var combineSourceMap = require('combine-source-map');
-var parse = require('esprima').parse;
+var parse = require('acorn').parse;
 
-module.exports = Unstructured;
+module.exports = function() {
+    return new Unstructured();
+};
 
 function unique(strArray) {
     var obj = {};
@@ -43,41 +45,55 @@ function moduleNameToRelativePath(moduleName) {
     return moduleName.split('.').join(path.sep) + '.js'
 }
 
-function Unstructured(sourceFolders, cb) {
+function Unstructured() {
     this.modules = {};
     this.pending = [];
-    this.sourceFolders = sourceFolders;
-    this.cb = cb;
+    this.sourceFolders = [];
+    this.entryModuleNames = [];
+    this.cb = null;
 }
 
-Unstructured.parse = function( sourceFolders, entryModuleNames, cb ) {
+Unstructured.prototype.addFolder = function( sourceFolder ) {
 
-    if (!util.isArray(sourceFolders)) {
-        sourceFolders = [sourceFolders];
-    }
+    this.sourceFolders.push( sourceFolder );
 
-    if (!util.isArray(entryModuleNames)) {
-        entryModuleNames = [entryModuleNames];
-    }
+};
 
-    var unstructured = new Unstructured( sourceFolders, function( error ) {
-        cb( error, entryModules, unstructured.resolve( entryModules ) );
-    } );
+Unstructured.prototype.addEntryPoint = function( entryModuleName ) {
 
-    var entryModules = entryModuleNames.map( function( moduleName ) { return unstructured.lookup( moduleName ) } );
+    this.entryModuleNames.push( entryModuleName );
+
+};
+
+Unstructured.prototype.bundle = function( opts, cb ) {
+
+    this.cb = function( error ) {
+        var resolvedSourceList = this.resolve( entryModules );
+        resolvedSourceList = resolvedSourceList.map( function( m ) { return m.absolutePath; } );
+        resolvedSourceList = resolvedSourceList.filter( function( p ) { return p; } );
+        cb( error, resolvedSourceList );
+    }.bind( this );
+
+    var entryModules = this.entryModuleNames.map( function( moduleName ) {
+        return this.lookup( moduleName );
+    }, this );
 };
 
 Unstructured.prototype.resolve = function( entryModules ) {
 
     return ( function resolveInternal( modules ) {
 
+        if (!modules) {
+            return [];
+        }
+
         modules = modules.map( function(module) {
 
-            if ( module.resolved ) {
+            if ( module._resolved ) {
                 return [];
             }
 
-            module.resolved = true;
+            module._resolved = true;
 
             return resolveInternal( module.dependencies ).concat( module );
 
@@ -88,7 +104,7 @@ Unstructured.prototype.resolve = function( entryModules ) {
     } ( entryModules ));
 };
 
-Unstructured.prototype.lookup = function(moduleName) {
+Unstructured.prototype.lookup = function( moduleName ) {
     if (this.modules[moduleName]) {
         return this.modules[moduleName];
     }
@@ -100,7 +116,21 @@ Unstructured.prototype.lookup = function(moduleName) {
 
     this.pending.push(module);
 
+    var moduleComplete = function(module) {
+
+        this.pending.splice(this.pending.indexOf(module), 1);
+
+        if ( this.pending.length == 0 ) {
+            this.cb( null );
+        }
+    }.bind( this );
+
     this.findFile( module.relativePath, function( error, absolutePath ) {
+
+        if ( error ) {
+            // not found
+            return moduleComplete(module);
+        }
 
         module.absolutePath = absolutePath;
 
@@ -113,11 +143,8 @@ Unstructured.prototype.lookup = function(moduleName) {
                 return this.lookup( moduleName );
             }, this );
 
-            this.pending.splice(this.pending.indexOf(module), 1);
+            moduleComplete(module);
 
-            if ( this.pending.length == 0 ) {
-                this.cb( null );
-            }
         }.bind( this ) );
     }.bind( this ));
 
@@ -143,26 +170,24 @@ Unstructured.prototype.findFile = function( relativePath, cb ) {
     })();
 };
 
-
 Unstructured.prototype.parse = function( moduleName, absolutePath, cb ) {
-
     fs.readFile( absolutePath, 'utf8', function( error, source ) {
         if ( error ) {
             return cb( error );
         }
 
-        var dependencies = Unstructured.extractMemberPaths( source )
+        var dependencies = this.extractMemberPaths( source )
             // ignore the module's own name
             .filter( function(name) { return moduleName != name; } )
 
         cb( null, dependencies );
-    } );
+    }.bind( this ) );
 };
 
-Unstructured.extractMemberPaths = function( source ) {
+Unstructured.prototype.extractMemberPaths = function( source ) {
     var expressions = [];
 
-    var ast = parse( source, { range: true } );
+    var ast = parse( source, { ranges: true } );
 
     (function processNode( node ) {
 
