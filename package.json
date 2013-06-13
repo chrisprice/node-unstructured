@@ -10,7 +10,7 @@
   "author": "",
   "license": "BSD",
   "dependencies": {
-    "falafel": "~0.2.1",
+    "acorn": "~0.3.1",
     "combine-source-map": "~0.1.2"
   },
   "devDependencies": {
