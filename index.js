@@ -15,7 +15,7 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-var EventEmitter = require('events').EventEmitter;
+var async = require('async');
 var util = require('util');
 var fs = require('fs');
 var path = require('path');
@@ -45,11 +45,39 @@ function moduleNameToRelativePath(moduleName) {
     return moduleName.split('.').join(path.sep) + '.js'
 }
 
+function Worker(unstructured, concurrency, cb) {
+    var q = async.queue(function(module, cb) {
+        async.waterfall([
+            function(cb) {
+                unstructured.findFile(module.relativePath, cb);
+            },
+            function(absolutePath, cb) {
+                module.absolutePath = absolutePath;
+                unstructured.parse( module.name, module.absolutePath, cb);
+            }
+        ], function(error, dependencies) {
+            if (!error) {
+                module.dependencies = dependencies.map( function( moduleName ) {
+                    return unstructured.lookup( moduleName );
+                } );
+            }
+            cb(error);
+        });
+    }, concurrency);
+    q.drain = cb;
+
+    this.add = function(module, cb) {
+        q.push(module, cb);
+    };
+}
+
 function Unstructured() {
     this.modules = {};
-    this.pending = [];
     this.sourceFolders = [];
     this.entryModuleNames = [];
+    this.worker = new Worker(this, 100, function(error) {
+        this.cb(error);
+    }.bind(this));
     this.cb = null;
 }
 
@@ -104,7 +132,7 @@ Unstructured.prototype.resolve = function( entryModules ) {
     } ( entryModules ));
 };
 
-Unstructured.prototype.lookup = function( moduleName ) {
+Unstructured.prototype.lookup = function( moduleName, cb ) {
     if (this.modules[moduleName]) {
         return this.modules[moduleName];
     }
@@ -114,39 +142,7 @@ Unstructured.prototype.lookup = function( moduleName ) {
         relativePath: moduleNameToRelativePath(moduleName)
     };
 
-    this.pending.push(module);
-
-    var moduleComplete = function(module) {
-
-        this.pending.splice(this.pending.indexOf(module), 1);
-
-        if ( this.pending.length == 0 ) {
-            this.cb( null );
-        }
-    }.bind( this );
-
-    this.findFile( module.relativePath, function( error, absolutePath ) {
-
-        if ( error ) {
-            // not found
-            return moduleComplete(module);
-        }
-
-        module.absolutePath = absolutePath;
-
-        this.parse( module.name, module.absolutePath, function( error, dependencies ) {
-            if ( error ) {
-                return this.cb( error );
-            }
-
-            module.dependencies = dependencies.map( function( moduleName ) {
-                return this.lookup( moduleName );
-            }, this );
-
-            moduleComplete(module);
-
-        }.bind( this ) );
-    }.bind( this ));
+    this.worker.add(module, cb);
 
     return module;
 };

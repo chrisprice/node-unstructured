@@ -38,19 +38,19 @@ test('findFile', function(t) {
 
     u.sourceFolders = [ exampleFolder ];
     u.findFile( 'index.js', function( error, filePath ) {
-        t.equals( error, null );
+        t.error( error );
         t.equals( filePath, exampleFolder + '/index.js' );
     });
 
     u.sourceFolders = [ example2Folder, exampleFolder ];
     u.findFile( 'index.js', function( error, filePath ) {
-        t.equals( error, null );
+        t.error( error );
         t.equals( filePath, example2Folder + '/index.js' );
     });
 
     u.sourceFolders = [ example2Folder, exampleFolder ];
     u.findFile( 'a/A.js', function( error, filePath ) {
-        t.equals( error, null );
+        t.error( error );
         t.equals( filePath, exampleFolder + '/a/A.js' );
     });
 });
@@ -77,7 +77,7 @@ test('lookup not found', function(t) {
 
     u.sourceFolders = [ exampleFolder ];
     u.cb = function( error ) {
-        t.equals( error, null);
+        t.error( error );
         t.equals( module.relativePath, 'not-found.js' );
         t.equals( module.absolutePath, undefined );
     }
@@ -95,7 +95,7 @@ test('lookup no recursion', function(t) {
 
     u.sourceFolders = [ exampleFolder ];
     u.cb = function( error ) {
-        t.equal( error, null);
+        t.error( error );
         t.equal( module.relativePath, 'a/b/C.js');
         t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
     }
@@ -113,7 +113,7 @@ test('lookup one level of recursion', function(t) {
 
     u.sourceFolders = [ exampleFolder ];
     u.cb = function( error ) {
-        t.equal( error, null);
+        t.error( error );
         t.equal( module.relativePath, 'a/B.js');
         t.equal( module.absolutePath, exampleFolder + '/a/B.js');
 
@@ -135,7 +135,7 @@ test('lookup two levels of recursion', function(t) {
 
     u.sourceFolders = [ exampleFolder ];
     u.cb = function( error ) {
-        t.equal( error, null);
+        t.error( error );
         t.equal( module.relativePath, 'a/A.js');
         t.equal( module.absolutePath, exampleFolder + '/a/A.js');
 
