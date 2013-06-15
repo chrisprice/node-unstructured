@@ -49,7 +49,9 @@ function Worker(unstructured, concurrency, cb) {
     var q = async.queue(function(module, cb) {
         async.waterfall([
             function(cb) {
-                unstructured.findFile(module.relativePath, cb);
+                unstructured.findFile(module.relativePath, function(absolutePath) {
+                    cb(!absolutePath, absolutePath);
+                });
             },
             function(absolutePath, cb) {
                 module.absolutePath = absolutePath;
@@ -148,22 +150,10 @@ Unstructured.prototype.lookup = function( moduleName, cb ) {
 };
 
 Unstructured.prototype.findFile = function( relativePath, cb ) {
-    var sourceFolders = this.sourceFolders.slice();
-    (function exists() {
-        var sourceFolder = sourceFolders.shift();
-        if (!sourceFolder) {
-            return cb('Not found');
-        }
-        var absolutePath = path.join(sourceFolder, relativePath);
-
-        fs.exists(absolutePath, function(result) {
-            if (result) {
-                cb(null, absolutePath);
-            } else {
-                exists();
-            }
-        });
-    })();
+    var possiblePaths = this.sourceFolders.map(function(sourceFolder) {
+        return path.join(sourceFolder, relativePath);
+    });
+    async.detectSeries(possiblePaths, fs.exists, cb);
 };
 
 Unstructured.prototype.parse = function( moduleName, absolutePath, cb ) {

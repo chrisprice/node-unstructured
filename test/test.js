@@ -24,7 +24,7 @@ test('extractMemberPaths', function (t) {
 });
 
 test('findFile', function(t) {
-    t.plan(7);
+    t.plan(4);
 
     var u = unstructured();
 
@@ -32,25 +32,22 @@ test('findFile', function(t) {
         example2Folder = __dirname + '/example2';
 
     u.sourceFolders = [];
-    u.findFile( 'index', function( error, filePath ) {
-        t.notEqual( error, null );
+    u.findFile( 'index', function( filePath ) {
+        t.false( filePath );
     });
 
     u.sourceFolders = [ exampleFolder ];
-    u.findFile( 'index.js', function( error, filePath ) {
-        t.error( error );
+    u.findFile( 'index.js', function( filePath ) {
         t.equals( filePath, exampleFolder + '/index.js' );
     });
 
     u.sourceFolders = [ example2Folder, exampleFolder ];
-    u.findFile( 'index.js', function( error, filePath ) {
-        t.error( error );
+    u.findFile( 'index.js', function( filePath ) {
         t.equals( filePath, example2Folder + '/index.js' );
     });
 
     u.sourceFolders = [ example2Folder, exampleFolder ];
-    u.findFile( 'a/A.js', function( error, filePath ) {
-        t.error( error );
+    u.findFile( 'a/A.js', function( filePath ) {
         t.equals( filePath, exampleFolder + '/a/A.js' );
     });
 });
