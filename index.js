@@ -67,7 +67,11 @@ Unstructured.prototype.bundle = function( opts, cb ) {
 
     var self = this;
 
-    async.map( this.entryModuleNames, self.lookup.bind( this ), function( error ) {
+    async.map( this.entryModuleNames, self.lookup.bind( this ), function( error, entryModules ) {
+
+        if ( error ) {
+            cb( error );
+        }
 
         var resolvedSourceList = self.resolve( entryModules )
             .map( function( m ) { return m.absolutePath; } )
