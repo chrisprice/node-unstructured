@@ -104,13 +104,27 @@ Unstructured.prototype.resolve = function( entryModules ) {
 };
 
 Unstructured.prototype.lookup = function( moduleName, cb ) {
-    if (this.modules[moduleName]) {
-        return this.modules[moduleName];
+
+    var module = this.modules[moduleName];
+
+    if (module) {
+
+        if (module._callbacks) {
+            module._callbacks.push(cb);
+        } else {
+            setTimeout(function() {
+                cb(null, module);
+            }, 0)
+        }
+
+
+        return module;
     }
 
-    var module = this.modules[moduleName] = {
+    module = this.modules[moduleName] = {
         name: moduleName,
-        relativePath: moduleNameToRelativePath(moduleName)
+        relativePath: moduleNameToRelativePath(moduleName),
+        _callbacks: [ cb ]
     };
 
     var self = this;
@@ -130,7 +144,12 @@ Unstructured.prototype.lookup = function( moduleName, cb ) {
             return self.lookup( moduleName, cb );
         }, function( error, dependencies ) {
             module.dependencies = dependencies;
-            cb( error, module );
+
+            module._callbacks.forEach( function (cb) {
+                cb( error, module);
+            } );
+
+            delete module._callbacks;
         } );
     });
 

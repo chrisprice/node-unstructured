@@ -99,6 +99,30 @@ test('lookup no recursion', function(t) {
 
 });
 
+test('lookup the same module twice', function(t) {
+    t.plan(9);
+
+    var u = unstructured();
+
+    var exampleFolder = __dirname + '/example';
+
+    u.sourceFolders = [ exampleFolder ];
+    var moduleA = u.lookup('a.b.C', function( error, module ) {
+        t.error( error );
+        t.equal( module.relativePath, 'a/b/C.js');
+        t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
+    } );
+    var moduleB = u.lookup('a.b.C', function( error, module ) {
+        t.error( error );
+        t.equal( module.relativePath, 'a/b/C.js');
+        t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
+    } );
+    t.equals(moduleA.name, 'a.b.C');
+    t.equals(moduleB.name, 'a.b.C');
+    t.equals(moduleA, moduleB);
+
+});
+
 test('lookup one level of recursion', function(t) {
     t.plan(7);
 
