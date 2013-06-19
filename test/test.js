@@ -73,12 +73,11 @@ test('lookup not found', function(t) {
     var exampleFolder = __dirname + '/example';
 
     u.sourceFolders = [ exampleFolder ];
-    u.cb = function( error ) {
+    var module = u.lookup('not-found', function( error, module ) {
         t.error( error );
         t.equals( module.relativePath, 'not-found.js' );
         t.equals( module.absolutePath, undefined );
-    }
-    var module = u.lookup('not-found');
+    } );
     t.equals(module.name, 'not-found');
 
 });
@@ -91,12 +90,11 @@ test('lookup no recursion', function(t) {
     var exampleFolder = __dirname + '/example';
 
     u.sourceFolders = [ exampleFolder ];
-    u.cb = function( error ) {
+    var module = u.lookup('a.b.C', function( error, module ) {
         t.error( error );
         t.equal( module.relativePath, 'a/b/C.js');
         t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
-    }
-    var module = u.lookup('a.b.C');
+    } );
     t.equals(module.name, 'a.b.C');
 
 });
@@ -109,7 +107,7 @@ test('lookup one level of recursion', function(t) {
     var exampleFolder = __dirname + '/example';
 
     u.sourceFolders = [ exampleFolder ];
-    u.cb = function( error ) {
+    var module = u.lookup('a.B', function( error, module ) {
         t.error( error );
         t.equal( module.relativePath, 'a/B.js');
         t.equal( module.absolutePath, exampleFolder + '/a/B.js');
@@ -117,8 +115,7 @@ test('lookup one level of recursion', function(t) {
         t.equal( module.dependencies[0].name, 'a.b.C');
         t.equal( module.dependencies[0].relativePath, 'a/b/C.js');
         t.equal( module.dependencies[0].absolutePath, exampleFolder + '/a/b/C.js');
-    }
-    var module = u.lookup('a.B');
+    } );
     t.equals(module.name, 'a.B');
 
 });
@@ -131,7 +128,7 @@ test('lookup two levels of recursion', function(t) {
     var exampleFolder = __dirname + '/example';
 
     u.sourceFolders = [ exampleFolder ];
-    u.cb = function( error ) {
+    var module = u.lookup('a.A', function( error, module ) {
         t.error( error );
         t.equal( module.relativePath, 'a/A.js');
         t.equal( module.absolutePath, exampleFolder + '/a/A.js');
@@ -143,8 +140,7 @@ test('lookup two levels of recursion', function(t) {
         t.equal( module.dependencies[0].dependencies[0].name, 'a.b.C');
         t.equal( module.dependencies[0].dependencies[0].relativePath, 'a/b/C.js');
         t.equal( module.dependencies[0].dependencies[0].absolutePath, exampleFolder + '/a/b/C.js');
-    }
-    var module = u.lookup('a.A');
+    } );
     t.equals(module.name, 'a.A');
 
 });
