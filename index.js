@@ -156,17 +156,16 @@ Unstructured.prototype.findFile = function( relativePath, cb ) {
 };
 
 Unstructured.prototype.parse = function( moduleName, absolutePath, cb ) {
-    fs.readFile( absolutePath, 'utf8', function( error, source ) {
-        if ( error ) {
-            return cb( error );
-        }
+    async.waterfall([
+        async.apply(fs.readFile, absolutePath, 'utf8'),
+        function(source, cb) {
+            var dependencies = this.extractMemberPaths( source )
+                // ignore the module's own name
+                .filter( function(name) { return moduleName != name; } )
 
-        var dependencies = this.extractMemberPaths( source )
-            // ignore the module's own name
-            .filter( function(name) { return moduleName != name; } )
-
-        cb( null, dependencies );
-    }.bind( this ) );
+            cb( null, dependencies );
+        }.bind( this )
+    ], cb);
 };
 
 Unstructured.prototype.extractMemberPaths = function( source ) {
