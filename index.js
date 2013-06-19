@@ -47,24 +47,7 @@ function moduleNameToRelativePath(moduleName) {
 
 function Worker(unstructured, concurrency, cb) {
     var q = async.queue(function(module, cb) {
-        async.waterfall([
-            function(cb) {
-                unstructured.findFile(module.relativePath, function(absolutePath) {
-                    cb(!absolutePath, absolutePath);
-                });
-            },
-            function(absolutePath, cb) {
-                module.absolutePath = absolutePath;
-                unstructured.parse( module.name, module.absolutePath, cb);
-            }
-        ], function(error, dependencies) {
-            if (!error) {
-                module.dependencies = dependencies.map( function( moduleName ) {
-                    return unstructured.lookup( moduleName );
-                } );
-            }
-            cb(error);
-        });
+
     }, concurrency);
     q.drain = cb;
 
@@ -77,10 +60,6 @@ function Unstructured() {
     this.modules = {};
     this.sourceFolders = [];
     this.entryModuleNames = [];
-    this.worker = new Worker(this, 100, function(error) {
-        this.cb(error);
-    }.bind(this));
-    this.cb = null;
 }
 
 Unstructured.prototype.addFolder = function( sourceFolder ) {
@@ -97,16 +76,17 @@ Unstructured.prototype.addEntryPoint = function( entryModuleName ) {
 
 Unstructured.prototype.bundle = function( opts, cb ) {
 
-    this.cb = function( error ) {
-        var resolvedSourceList = this.resolve( entryModules );
-        resolvedSourceList = resolvedSourceList.map( function( m ) { return m.absolutePath; } );
-        resolvedSourceList = resolvedSourceList.filter( function( p ) { return p; } );
-        cb( error, resolvedSourceList );
-    }.bind( this );
+    var self = this;
 
-    var entryModules = this.entryModuleNames.map( function( moduleName ) {
-        return this.lookup( moduleName );
-    }, this );
+    async.map( this.entryModuleNames, self.lookup.bind( this ), function( error ) {
+
+        var resolvedSourceList = self.resolve( entryModules )
+            .map( function( m ) { return m.absolutePath; } )
+            .filter( function( p ) { return p; } );
+
+        cb( error, resolvedSourceList );
+
+    } );
 };
 
 Unstructured.prototype.resolve = function( entryModules ) {
@@ -144,7 +124,26 @@ Unstructured.prototype.lookup = function( moduleName, cb ) {
         relativePath: moduleNameToRelativePath(moduleName)
     };
 
-    this.worker.add(module, cb);
+    var self = this;
+
+    async.waterfall([
+        function(cb) {
+            self.findFile(module.relativePath, function(absolutePath) {
+                cb(!absolutePath, absolutePath);
+            });
+        },
+        function(absolutePath, cb) {
+            module.absolutePath = absolutePath;
+            self.parse( module.name, module.absolutePath, cb);
+        }
+    ], function(error, dependencies) {
+        async.map( error ? [] : dependencies, function( moduleName, cb ) {
+            return self.lookup( moduleName, cb );
+        }, function( error, dependencies ) {
+            module.dependencies = dependencies;
+            cb( error, module );
+        } );
+    });
 
     return module;
 };
