@@ -74,10 +74,9 @@ Unstructured.prototype.bundle = function( opts, cb ) {
         }
 
         var resolvedSourceList = self.resolve( entryModules )
-            .map( function( m ) { return m.absolutePath; } )
-            .filter( function( p ) { return p; } );
+            .filter( function( m ) { return m.absolutePath; } );
 
-        cb( error, resolvedSourceList );
+        cb( error, self.pack( resolvedSourceList ) );
 
     } );
 };
@@ -141,7 +140,7 @@ Unstructured.prototype.lookup = function( moduleName, cb ) {
         },
         function(absolutePath, cb) {
             module.absolutePath = absolutePath;
-            self.parse( module.name, module.absolutePath, cb);
+            self.parse( module, cb);
         }
     ], function(error, dependencies) {
         async.map( error ? [] : dependencies, function( moduleName, cb ) {
@@ -167,15 +166,17 @@ Unstructured.prototype.findFile = function( relativePath, cb ) {
     async.detectSeries(possiblePaths, fs.exists, cb);
 };
 
-Unstructured.prototype.parse = function( moduleName, absolutePath, cb ) {
-    fs.readFile( absolutePath, 'utf8', function( error, source ) {
+Unstructured.prototype.parse = function( module, cb ) {
+    fs.readFile( module.absolutePath, 'utf8', function( error, source ) {
         if ( error ) {
             return cb( error );
         }
 
+        module.source = source;
+
         var dependencies = this.extractMemberPaths( source )
             // ignore the module's own name
-            .filter( function(name) { return moduleName != name; } )
+            .filter( function(name) { return module.name != name; } )
 
         cb( null, dependencies );
     }.bind( this ) );
@@ -219,21 +220,28 @@ Unstructured.prototype.extractMemberPaths = function( source ) {
     return unique( expressions );
 };
 
-Unstructured.prototype.pack = function(sourceList) {
+Unstructured.prototype.pack = function(moduleList) {
     var sourceMap = combineSourceMap.create();
-    return sourceList.reduce(function(combinedSource, item) {
-        if (item.memberPath) {
-            item.memberPath.split('.').forEach(function (part, i, parts) {
+    var lineCount = 0, combinedSource = "";
+    moduleList.forEach(function(module) {
+        if (module.name) {
+            module.name.split('.').forEach(function (part, i, parts) {
                 if (i < parts.length - 1) {
                     var namespace = parts.slice(0, i + 1).join('.');
                     combinedSource += namespace + ' = ' + namespace + ' || {};\n'
+                    lineCount++;
                 }
             });
         }
-        var source = fs.readFileSync(item.filePath, 'utf8');
+
         sourceMap.addFile(
-            { sourceFile: item.filePath, source: source },
-            { line: combinedSource.split('\n').length - 1 });
-        return combinedSource + combineSourceMap.removeComments(source) + '\n';
-    }, '') + sourceMap.comment();
+            { sourceFile: module.absolutePath, source: module.source },
+            { line: lineCount });
+
+        var strippedSource = combineSourceMap.removeComments(module.source) + '\n';
+        combinedSource += strippedSource;
+        lineCount += strippedSource.match(/\n/g).length;
+    });
+
+    return combinedSource + sourceMap.comment();
 };
