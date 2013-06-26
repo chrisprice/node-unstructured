@@ -20,6 +20,7 @@ var analyse = require('./lib/analyse');
 var build = require('./lib/build');
 var pack = require('./lib/pack');
 var resolve = require('./lib/resolve');
+var timer = require('./lib/timer');
 
 module.exports = function(opts) {
     opts = opts || {};
@@ -35,19 +36,36 @@ module.exports = function(opts) {
         entryModuleNames.push( entryModuleName );
     }
 
+
     function bundle(cb) {
+
+        timer.start('build+analyse');
+
         var b = build(analyse(opts));
         async.map(entryModuleNames, b.build, function(error, entryModules) {
+
             if ( error ) {
                 return cb( error );
             }
+
+            timer.stop('build+analyse');
+
+            timer.start('resolve');
 
             var r = resolve(opts);
             var resolvedModuleList = r.resolve( entryModules )
                 .filter( function( m ) { return m.absolutePath; } );
 
+            console.log(resolvedModuleList.map(function(m) { return m.name }))
+
+            timer.stop('resolve');
+
+            timer.start('pack');
+
             var p = pack(opts);
             var packed = p.pack(resolvedModuleList);
+
+            timer.stop('pack');
 
             cb(undefined, packed);
         });
