@@ -3,14 +3,15 @@ var acorn = require('acorn');
 var test = require('tape');
 
 test('find', function(t) {
-    t.plan(8);
+    t.plan(12);
 
     function find(sourceFolders, name, expected) {
         var a = analyse({ sourceFolders: sourceFolders });
-        var module = { name: name };
-        a.find(module, function(error) {
+        var moduleA = { name: name };
+        a.find(moduleA, function(error, moduleB) {
             t.error(error);
-            t.equals(module.absolutePath, expected);
+            t.equals(moduleA, moduleB);
+            t.equals(moduleA.absolutePath, expected);
         });
     }
 
@@ -24,14 +25,15 @@ test('find', function(t) {
 });
 
 test('extract', function (t) {
-    t.plan(26);
+    t.plan(39);
 
     function extract(source, expected) {
         var a = analyse();
-        var module = { source: source, ast: acorn.parse(source, { ranges:true }) };
-        a.extract(module, function(error) {
+        var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
+        a.extract(moduleA, function(error, moduleB) {
             t.error(error);
-            t.deepEqual(module.references, [expected]);
+            t.equals(moduleA, moduleB);
+            t.deepEqual(moduleA.references, [expected]);
         });
     }
 
@@ -50,3 +52,26 @@ test('extract', function (t) {
     extract('a.Module.prop = 1', 'a.Module');
     extract('var prop = a.Module.prop', 'a.Module');
 });
+
+test('analyse', function(t) {
+    t.plan(12);
+
+    function _analyse(sourceFolders, name, expectedPath, expectedReferences) {
+        var opts = { sourceFolders: sourceFolders };
+        var a = analyse(opts);
+        var moduleA = { name: name };
+        a.analyse(moduleA, function(error, moduleB) {
+            t.error(error);
+            t.equals(moduleA, moduleB);
+            t.equals(moduleA.absolutePath, expectedPath);
+            t.deepEquals(moduleA.references, expectedReferences);
+        });
+    }
+
+    var exampleFolder = __dirname + '/example';
+
+    _analyse([exampleFolder], 'not-found', undefined, []);
+    _analyse([exampleFolder], 'a.b.C', exampleFolder + '/a/b/C.js', []);
+    _analyse([exampleFolder], 'a.B', exampleFolder + '/a/B.js', ['a.b.C']);
+
+})

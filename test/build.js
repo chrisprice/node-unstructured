@@ -2,101 +2,79 @@ var test = require('tape');
 var analyse = require('../lib/analyse');
 var build = require('../lib/build');
 
-test('build not found', function(t) {
-    t.plan(4);
+function _build(referenceMap) {
+    return build({
+        analyse: function(module, cb) {
+            module.references = referenceMap[module.name];
+            process.nextTick(cb);
+        }
+    });
+}
 
-    var exampleFolder = __dirname + '/example';
-    var opts = { sourceFolders: [ exampleFolder ] };
-    var b = build(analyse(opts));
+test('build a module with no references', function(t) {
+    t.plan(3);
 
-    var module = b.build('not-found', function( error, module ) {
+    var b = _build({
+        'no-references': []
+    });
+
+    var module = b.build('no-references', function( error, module ) {
         t.error( error );
-        t.equals( module.relativePath, 'not-found.js' );
-        t.equals( module.absolutePath, undefined );
+        t.deepEquals(module.dependencies, []);
     } );
-    t.equals(module.name, 'not-found');
+    t.equals(module.name, 'no-references');
 
 });
 
-test('lookup no recursion', function(t) {
-    t.plan(4);
+test('build a module with 1 reference', function(t) {
+    t.plan(5);
 
-    var exampleFolder = __dirname + '/example';
-    var opts = { sourceFolders: [ exampleFolder ] };
-    var b = build(analyse(opts));
+    var b = _build({
+        'no-references': [],
+        '1-reference': [ 'no-references' ]
+    });
 
-    var module = b.build('a.b.C', function( error, module ) {
+    var module = b.build('1-reference', function( error, module ) {
         t.error( error );
-        t.equal( module.relativePath, 'a/b/C.js');
-        t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
+        t.equals(module.dependencies.length, 1);
+        t.equals(module.dependencies[0].name, 'no-references');
+        t.deepEquals(module.dependencies[0].dependencies, []);
     } );
-    t.equals(module.name, 'a.b.C');
+    t.equals(module.name, '1-reference');
 
 });
 
-test('lookup the same module twice', function(t) {
-    t.plan(9);
+test('build the same module twice', function(t) {
+    t.plan(7);
 
-    var exampleFolder = __dirname + '/example';
-    var opts = { sourceFolders: [ exampleFolder ] };
-    var b = build(analyse(opts));
+    var b = _build({
+        'no-references': []
+    });
 
-    var moduleA = b.build('a.b.C', function( error, module ) {
+    var moduleA = b.build('no-references', function( error, module ) {
         t.error( error );
-        t.equal( module.relativePath, 'a/b/C.js');
-        t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
+        t.deepEquals(module.dependencies, []);
     } );
-    var moduleB = b.build('a.b.C', function( error, module ) {
+    var moduleB = b.build('no-references', function( error, module ) {
         t.error( error );
-        t.equal( module.relativePath, 'a/b/C.js');
-        t.equal( module.absolutePath, exampleFolder + '/a/b/C.js');
+        t.deepEquals(module.dependencies, []);
     } );
-    t.equals(moduleA.name, 'a.b.C');
-    t.equals(moduleB.name, 'a.b.C');
+    t.equals(moduleA.name, 'no-references');
+    t.equals(moduleB.name, 'no-references');
     t.equals(moduleA, moduleB);
 
 });
 
-test('lookup one level of recursion', function(t) {
-    t.plan(7);
+test('build a module with a circular reference', function(t) {
+    t.plan(2);
 
-    var exampleFolder = __dirname + '/example';
-    var opts = { sourceFolders: [ exampleFolder ] };
-    var b = build(analyse(opts));
+    var b = _build({
+        '1-reference': [ '1-reference' ]
+    });
 
-    var module = b.build('a.B', function( error, module ) {
-        t.error( error );
-        t.equal( module.relativePath, 'a/B.js');
-        t.equal( module.absolutePath, exampleFolder + '/a/B.js');
-
-        t.equal( module.dependencies[0].name, 'a.b.C');
-        t.equal( module.dependencies[0].relativePath, 'a/b/C.js');
-        t.equal( module.dependencies[0].absolutePath, exampleFolder + '/a/b/C.js');
+    var module = b.build('1-reference', function( error, module ) {
+        t.equals( error, 'circular reference' );
     } );
-    t.equals(module.name, 'a.B');
-
-});
-
-test('lookup two levels of recursion', function(t) {
-    t.plan(10);
-
-    var exampleFolder = __dirname + '/example';
-    var opts = { sourceFolders: [ exampleFolder ] };
-    var b = build(analyse(opts));
-
-    var module = b.build('a.A', function( error, module ) {
-        t.error( error );
-        t.equal( module.relativePath, 'a/A.js');
-        t.equal( module.absolutePath, exampleFolder + '/a/A.js');
-
-        t.equal( module.dependencies[0].name, 'a.B');
-        t.equal( module.dependencies[0].relativePath, 'a/B.js');
-        t.equal( module.dependencies[0].absolutePath, exampleFolder + '/a/B.js');
-
-        t.equal( module.dependencies[0].dependencies[0].name, 'a.b.C');
-        t.equal( module.dependencies[0].dependencies[0].relativePath, 'a/b/C.js');
-        t.equal( module.dependencies[0].dependencies[0].absolutePath, exampleFolder + '/a/b/C.js');
-    } );
-    t.equals(module.name, 'a.A');
+    t.equals(module.name, '1-reference');
 
 });

@@ -22,9 +22,12 @@ var pack = require('./lib/pack');
 var resolve = require('./lib/resolve');
 
 module.exports = function(opts) {
+    opts = opts || {};
+    opts.sourceFolders = opts.sourceFolders || [];
+
     var entryModuleNames = [];
 
-    function addFolder( sourceFolder ) {
+    function addSourceFolder( sourceFolder ) {
         opts.sourceFolders.push( sourceFolder );
     }
 
@@ -51,7 +54,7 @@ module.exports = function(opts) {
     }
 
     return {
-        addFolder: addFolder,
+        addSourceFolder: addSourceFolder,
         addEntryPoint: addEntryPoint,
         bundle: bundle
     }

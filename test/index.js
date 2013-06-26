@@ -1,13 +1,16 @@
-var index = require('../index');
+var unstructured = require('../index');
 var test = require('tape');
+var fs = require('fs');
 
 test('bundle', function(t) {
-    t.plan(1);
+    t.plan(2);
 
-    var i = index({ sourceFolders: [__dirname+'/example'] });
-    i.addEntryPoint('index');
-    i.bundle(function(error, output) {
+    var u = unstructured();
+    u.addSourceFolder(__dirname+'/example2');
+    u.addSourceFolder(__dirname+'/example');
+    u.addEntryPoint('index');
+    u.bundle(function(error, output) {
         t.error(error);
-        console.log(output);
+        t.equals(output, fs.readFileSync(__dirname + '/example.packed.js', 'utf8'));
     })
 });
