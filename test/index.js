@@ -5,7 +5,7 @@ var fs = require('fs');
 test('bundle', function(t) {
     t.plan(2);
 
-    var u = unstructured();
+    var u = unstructured({ debug: true });
     u.addSourceFolder(__dirname+'/example2');
     u.addSourceFolder(__dirname+'/example');
     u.addEntryPoint('index');
