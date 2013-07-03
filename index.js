@@ -41,7 +41,7 @@ module.exports = function(opts) {
 
         timer.start('build+analyse');
 
-        var b = build(analyse(opts));
+        var b = build({ analyse: analyse.bind(null, { sourceFolders: opts.sourceFolders }) });
         async.map(entryModuleNames, b.build, function(error, entryModules) {
 
             if ( error ) {

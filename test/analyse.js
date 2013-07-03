@@ -6,9 +6,9 @@ test('find', function(t) {
     t.plan(12);
 
     function find(sourceFolders, name, expected) {
-        var a = analyse({ sourceFolders: sourceFolders });
+        var opts = { sourceFolders: sourceFolders };
         var moduleA = { name: name };
-        a.find(moduleA, function(error, moduleB) {
+        analyse.find(opts, moduleA, function(error, opts, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.equals(moduleA.absolutePath, expected);
@@ -28,9 +28,8 @@ test('extract', function (t) {
     t.plan(39);
 
     function extract(source, expected) {
-        var a = analyse();
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
-        a.extract(moduleA, function(error, moduleB) {
+        analyse.extract({}, moduleA, function(error, opts, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.deepEqual(moduleA.references, [expected]);
@@ -58,9 +57,8 @@ test('analyse', function(t) {
 
     function _analyse(sourceFolders, name, expectedPath, expectedReferences) {
         var opts = { sourceFolders: sourceFolders };
-        var a = analyse(opts);
         var moduleA = { name: name };
-        a.analyse(moduleA, function(error, moduleB) {
+        analyse(opts, moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.equals(moduleA.absolutePath, expectedPath);
