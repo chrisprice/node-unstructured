@@ -2,13 +2,13 @@ var test = require('tape');
 var analyse = require('../lib/analyse');
 var build = require('../lib/build');
 
-function _build(referenceMap) {
-    return build({
-        analyse: function(module, cb) {
-            module.references = referenceMap[module.name];
-            process.nextTick(cb);
-        }
-    });
+function _build(referenceMap, opts) {
+    opts = opts || {};
+    opts.analyse = function(module, cb) {
+        module.references = referenceMap[module.name];
+        process.nextTick(cb);
+    };
+    return build(opts);
 }
 
 test('build a module with no references', function(t) {
@@ -65,7 +65,7 @@ test('build the same module twice', function(t) {
 
 });
 
-test('build a module with a circular reference', function(t) {
+test('build a module with a self reference  (allowCircularReferences: false)', function(t) {
     t.plan(2);
 
     var b = _build({
@@ -76,5 +76,63 @@ test('build a module with a circular reference', function(t) {
         t.equals( error, 'circular reference' );
     } );
     t.equals(module.name, '1-reference');
+
+});
+
+test('build a module with a circular reference (allowCircularReferences: false)', function(t) {
+    t.plan(2);
+
+    var b = _build({
+        'a': [ 'b' ],
+        'b': [ 'a' ]
+    });
+
+    var module = b.build('a', function( error, module ) {
+        t.equals( error, 'circular reference' );
+    } );
+    t.equals(module.name, 'a');
+
+});
+
+test('build a module with a circular reference (allowCircularReferences: true)', function(t) {
+    t.plan(5);
+
+    var b = _build({
+        'a': [ 'b' ],
+        'b': [ 'a' ]
+    }, {
+        allowCircularReferences: true
+    });
+
+    var module = b.build('a', function( error, module ) {
+        t.error( error );
+        t.equals(module.dependencies.length, 1);
+        t.equals(module.dependencies[0].name, 'b');
+        t.deepEquals(module.dependencies[0].dependencies, []);
+    } );
+    t.equals(module.name, 'a');
+
+});
+
+test('build a module with a sparse circular reference (allowCircularReferences: true)', function(t) {
+    t.plan(7);
+
+    var b = _build({
+        'a': [ 'b' ],
+        'b': [ 'c' ],
+        'c': [ 'a' ]
+    }, {
+        allowCircularReferences: true
+    });
+
+    var module = b.build('a', function( error, module ) {
+        t.error( error );
+        t.equals(module.dependencies.length, 1);
+        t.equals(module.dependencies[0].name, 'b');
+        t.equals(module.dependencies[0].dependencies.length, 1);
+        t.equals(module.dependencies[0].dependencies[0].name, 'c');
+        t.deepEquals(module.dependencies[0].dependencies[0].dependencies, []);
+    } );
+    t.equals(module.name, 'a');
 
 });
