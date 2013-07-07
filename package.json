@@ -12,7 +12,8 @@
   "dependencies": {
     "acorn": "~0.3.1",
     "combine-source-map": "~0.1.2",
-    "async": "~0.2.9"
+    "async": "~0.2.9",
+    "xtend": "~2.0.6"
   },
   "devDependencies": {
     "tape": "~1.0.2"

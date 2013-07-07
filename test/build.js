@@ -2,18 +2,17 @@ var test = require('tape');
 var analyse = require('../lib/analyse');
 var build = require('../lib/build');
 
-function _build(referenceMap, opts) {
-    opts = opts || {};
-    opts.analyse = function(module, cb) {
-        module.references = referenceMap[module.name];
-        process.nextTick(cb);
-    };
-    return {
-        build: function(moduleNames, cb) {
-            return build(moduleNames, opts, function(error, modules) {
-                cb(error, modules[0])
-            });
+function _build(referenceMap) {
+    var opts = {
+        analyse: function(module, cb) {
+            module.references = referenceMap[module.name];
+            process.nextTick(cb);
         }
+    };
+    return function(moduleName, cb) {
+        return build([moduleName], opts, function(error, modules) {
+            cb(error, modules[0])
+        });
     };
 }
 
@@ -24,7 +23,7 @@ test('build a module with no references', function(t) {
         'no-references': []
     });
 
-    b.build('no-references', function( error, module ) {
+    b('no-references', function( error, module ) {
         t.error( error );
         t.deepEquals(module.dependencies, []);
     } );
@@ -38,7 +37,7 @@ test('build a module with 1 reference', function(t) {
         '1-reference': [ 'no-references' ]
     });
 
-    b.build('1-reference', function( error, module ) {
+    b('1-reference', function( error, module ) {
         t.error( error );
         t.equals(module.dependencies.length, 1);
         t.equals(module.dependencies[0].name, 'no-references');
@@ -54,12 +53,12 @@ test('build the same module twice', function(t) {
         'no-references': []
     });
 
-    b.build('no-references', function( error, module ) {
+    b('no-references', function( error, module ) {
         t.error( error );
         t.equals(module.name, 'no-references');
         t.deepEquals(module.dependencies, []);
     } );
-    b.build('no-references', function( error, module ) {
+    b('no-references', function( error, module ) {
         t.error( error );
         t.equals(module.name, 'no-references');
         t.deepEquals(module.dependencies, []);
@@ -73,7 +72,7 @@ test('build a module with a self reference', function(t) {
         '1-reference': [ '1-reference' ]
     });
 
-    b.build('1-reference', function( error, module ) {
+    b('1-reference', function( error, module ) {
         t.error( error );
         t.equals(module.dependencies.length, 1);
         t.equals(module.dependencies[0], module);
@@ -88,7 +87,7 @@ test('build a module with a circular reference', function(t) {
         'b': [ 'a' ]
     });
 
-    b.build('a', function( error, module ) {
+    b('a', function( error, module ) {
         t.error( error );
         t.equals(module.dependencies.length, 1);
         t.equals(module.dependencies[0].name, 'b');
@@ -106,7 +105,7 @@ test('build a module with a sparse circular reference', function(t) {
         'c': [ 'a' ]
     });
 
-    b.build('a', function( error, module ) {
+    b('a', function( error, module ) {
         t.error( error );
         t.equals(module.dependencies.length, 1);
         t.equals(module.dependencies[0].name, 'b');

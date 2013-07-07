@@ -21,58 +21,40 @@ var build = require('./lib/build');
 var pack = require('./lib/pack');
 var resolve = require('./lib/resolve');
 var timer = require('./lib/timer');
+var extend = require('xtend');
 
-module.exports = function(opts) {
-    opts = opts || {};
-    opts.sourceFolders = opts.sourceFolders || [];
+module.exports = function(opts, cb) {
+    opts = extend({
+        sourceFolders: [],
+        entryPoints: [],
+        analyse: analyse(opts).analyse
+    }, opts);
 
-    var entryModuleNames = [];
+    timer.start('build+analyse');
 
-    function addSourceFolder( sourceFolder ) {
-        opts.sourceFolders.push( sourceFolder );
-    }
+    build(opts.entryPoints, opts, function(error, entryModules) {
 
-    function addEntryPoint( entryModuleName ) {
-        entryModuleNames.push( entryModuleName );
-    }
+        if ( error ) {
+            return cb( error );
+        }
 
+        timer.stop('build+analyse');
 
-    function bundle(cb) {
+        timer.start('resolve');
 
-        timer.start('build+analyse');
+        var r = resolve(opts);
+        var resolvedModuleList = r.resolve( entryModules )
+            .filter( function( m ) { return m.absolutePath; } );
 
-        build(entryModuleNames, analyse(opts), function(error, entryModules) {
+        timer.stop('resolve');
 
-            if ( error ) {
-                return cb( error );
-            }
+        timer.start('pack');
 
-            timer.stop('build+analyse');
+        var p = pack(opts);
+        var packed = p.pack(resolvedModuleList);
 
-            timer.start('resolve');
+        timer.stop('pack');
 
-            var r = resolve(opts);
-            var resolvedModuleList = r.resolve( entryModules )
-                .filter( function( m ) { return m.absolutePath; } );
-
-            console.log(resolvedModuleList.map(function(m) { return m.name }))
-
-            timer.stop('resolve');
-
-            timer.start('pack');
-
-            var p = pack(opts);
-            var packed = p.pack(resolvedModuleList);
-
-            timer.stop('pack');
-
-            cb(undefined, packed);
-        });
-    }
-
-    return {
-        addSourceFolder: addSourceFolder,
-        addEntryPoint: addEntryPoint,
-        bundle: bundle
-    }
+        cb(undefined, packed);
+    });
 };

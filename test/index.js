@@ -5,12 +5,12 @@ var fs = require('fs');
 test('bundle', function(t) {
     t.plan(2);
 
-    var u = unstructured({ debug: true });
-    u.addSourceFolder(__dirname+'/example2');
-    u.addSourceFolder(__dirname+'/example');
-    u.addEntryPoint('index');
-    u.bundle(function(error, output) {
+    unstructured({
+        debug: true,
+        sourceFolders: [__dirname+'/example2', __dirname+'/example'],
+        entryPoints: ['index']
+    }, function(error, output) {
         t.error(error);
         t.equals(output, fs.readFileSync(__dirname + '/example.packed.js', 'utf8'));
-    })
+    });
 });
