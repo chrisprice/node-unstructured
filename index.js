@@ -33,7 +33,7 @@ module.exports = function(opts, cb) {
 
     timer.start('build+analyse');
 
-    build(opts.entryPoints, opts, function(error, entryModules) {
+    build(opts.entryPoints, opts.analyse, function(error, entryModules) {
 
         if ( error ) {
             return cb( error );
@@ -50,7 +50,9 @@ module.exports = function(opts, cb) {
 
         timer.start('pack');
 
-        var packed = pack(resolvedModuleList, opts);
+        var packed = pack(resolvedModuleList, {
+            debug: opts.debug
+        });
 
         timer.stop('pack');
 

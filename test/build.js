@@ -3,14 +3,12 @@ var analyse = require('../lib/analyse');
 var build = require('../lib/build');
 
 function _build(referenceMap) {
-    var opts = {
-        analyse: function(module, cb) {
-            module.references = referenceMap[module.name];
-            process.nextTick(cb);
-        }
-    };
+    function analyse(module, cb) {
+        module.references = referenceMap[module.name];
+        process.nextTick(cb);
+    }
     return function(moduleName, cb) {
-        return build([moduleName], opts, function(error, modules) {
+        return build([moduleName], analyse, function(error, modules) {
             cb(error, modules[0])
         });
     };
