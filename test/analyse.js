@@ -28,7 +28,7 @@ test('extract', function (t) {
     t.plan(39);
 
     function extract(source, expected) {
-        var a = analyse();
+        var a = analyse({});
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
         a.extract(moduleA, function(error, moduleB) {
             t.error(error);
