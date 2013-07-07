@@ -7,6 +7,7 @@ test('bundle', function(t) {
 
     unstructured({
         debug: true,
+        verbose: true,
         sourceFolders: [__dirname+'/example2', __dirname+'/example'],
         entryPoints: ['index']
     }, function(error, output) {

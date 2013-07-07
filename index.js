@@ -28,7 +28,8 @@ module.exports = function(opts, cb) {
         sourceFolders: [],
         entryPoints: [],
         analyse: async.apply(analyse, opts.sourceFolders),
-        debug: false
+        debug: false,
+        verbose: false
     }, opts);
 
     timer.start('build+analyse');
@@ -39,20 +40,14 @@ module.exports = function(opts, cb) {
             return cb( error );
         }
 
-        timer.stop('build+analyse');
+        timer.next('build+analyse', 'resolve');
 
-        timer.start('resolve');
-
-        var resolvedModuleList = resolve( entryModules )
+        var resolvedModuleList = resolve( entryModules, { verbose: opts.verbose } )
             .filter( function( m ) { return m.absolutePath; } );
 
-        timer.stop('resolve');
+        timer.next('resolve', 'pack');
 
-        timer.start('pack');
-
-        var packed = pack(resolvedModuleList, {
-            debug: opts.debug
-        });
+        var packed = pack(resolvedModuleList, { debug: opts.debug });
 
         timer.stop('pack');
 
