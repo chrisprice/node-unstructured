@@ -27,7 +27,8 @@ module.exports = function(opts, cb) {
     opts = extend({
         sourceFolders: [],
         entryPoints: [],
-        analyse: analyse(opts).analyse
+        analyse: async.apply(analyse, opts.sourceFolders),
+        debug: false
     }, opts);
 
     timer.start('build+analyse');

@@ -1,3 +1,5 @@
+var extract = require('../lib/analyse/extract');
+var lookup = require('../lib/analyse/lookup');
 var analyse = require('../lib/analyse');
 var acorn = require('acorn');
 var test = require('tape');
@@ -6,9 +8,8 @@ test('find', function(t) {
     t.plan(12);
 
     function find(sourceFolders, name, expected) {
-        var a = analyse({ sourceFolders: sourceFolders });
         var moduleA = { name: name };
-        a.find(moduleA, function(error, moduleB) {
+        lookup.find(sourceFolders, moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.equals(moduleA.absolutePath, expected);
@@ -27,40 +28,37 @@ test('find', function(t) {
 test('extract', function (t) {
     t.plan(39);
 
-    function extract(source, expected) {
-        var a = analyse({});
+    function extract_(source, expected) {
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
-        a.extract(moduleA, function(error, moduleB) {
+        extract(moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.deepEqual(moduleA.references, [expected]);
         });
     }
 
-    extract('a.Module', 'a.Module');
-    extract('a.b.Module', 'a.b.Module');
-    extract('a.CamelCaseModule', 'a.CamelCaseModule');
-    extract('a1.Module', 'a1.Module');
-    extract('a.Module2', 'a.Module2');
+    extract_('a.Module', 'a.Module');
+    extract_('a.b.Module', 'a.b.Module');
+    extract_('a.CamelCaseModule', 'a.CamelCaseModule');
+    extract_('a1.Module', 'a1.Module');
+    extract_('a.Module2', 'a.Module2');
 
-    extract('var Module = a.Module', 'a.Module');
-    extract('Module = a.Module', 'a.Module');
-    extract('new a.Module', 'a.Module');
-    extract('new a.Module()', 'a.Module');
-    extract('a.Module()', 'a.Module');
-    extract('a.Module.method()', 'a.Module');
-    extract('a.Module.prop = 1', 'a.Module');
-    extract('var prop = a.Module.prop', 'a.Module');
+    extract_('var Module = a.Module', 'a.Module');
+    extract_('Module = a.Module', 'a.Module');
+    extract_('new a.Module', 'a.Module');
+    extract_('new a.Module()', 'a.Module');
+    extract_('a.Module()', 'a.Module');
+    extract_('a.Module.method()', 'a.Module');
+    extract_('a.Module.prop = 1', 'a.Module');
+    extract_('var prop = a.Module.prop', 'a.Module');
 });
 
 test('analyse', function(t) {
     t.plan(12);
 
     function _analyse(sourceFolders, name, expectedPath, expectedReferences) {
-        var opts = { sourceFolders: sourceFolders };
-        var a = analyse(opts);
         var moduleA = { name: name };
-        a.analyse(moduleA, function(error, moduleB) {
+        analyse(sourceFolders, moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.equals(moduleA.absolutePath, expectedPath);
