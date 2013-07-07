@@ -42,16 +42,14 @@ module.exports = function(opts, cb) {
 
         timer.start('resolve');
 
-        var r = resolve(opts);
-        var resolvedModuleList = r.resolve( entryModules )
+        var resolvedModuleList = resolve( entryModules )
             .filter( function( m ) { return m.absolutePath; } );
 
         timer.stop('resolve');
 
         timer.start('pack');
 
-        var p = pack(opts);
-        var packed = p.pack(resolvedModuleList);
+        var packed = pack(resolvedModuleList, opts);
 
         timer.stop('pack');
 
