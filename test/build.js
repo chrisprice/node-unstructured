@@ -65,64 +65,47 @@ test('build the same module twice', function(t) {
 
 });
 
-test('build a module with a self reference  (allowCircularReferences: false)', function(t) {
-    t.plan(2);
+test('build a module with a self reference', function(t) {
+    t.plan(4);
 
     var b = _build({
         '1-reference': [ '1-reference' ]
     });
 
     var module = b.build('1-reference', function( error, module ) {
-        t.equals( error, 'circular reference' );
+        t.error( error );
+        t.equals(module.dependencies.length, 1);
+        t.equals(module.dependencies[0], module);
     } );
     t.equals(module.name, '1-reference');
 
 });
 
-test('build a module with a circular reference (allowCircularReferences: false)', function(t) {
-    t.plan(2);
-
-    var b = _build({
-        'a': [ 'b' ],
-        'b': [ 'a' ]
-    });
-
-    var module = b.build('a', function( error, module ) {
-        t.equals( error, 'circular reference' );
-    } );
-    t.equals(module.name, 'a');
-
-});
-
-test('build a module with a circular reference (allowCircularReferences: true)', function(t) {
+test('build a module with a circular reference', function(t) {
     t.plan(5);
 
     var b = _build({
         'a': [ 'b' ],
         'b': [ 'a' ]
-    }, {
-        allowCircularReferences: true
     });
 
     var module = b.build('a', function( error, module ) {
         t.error( error );
         t.equals(module.dependencies.length, 1);
         t.equals(module.dependencies[0].name, 'b');
-        t.deepEquals(module.dependencies[0].dependencies, []);
+        t.deepEquals(module.dependencies[0].dependencies, [module]);
     } );
     t.equals(module.name, 'a');
 
 });
 
-test('build a module with a sparse circular reference (allowCircularReferences: true)', function(t) {
+test('build a module with a sparse circular reference', function(t) {
     t.plan(7);
 
     var b = _build({
         'a': [ 'b' ],
         'b': [ 'c' ],
         'c': [ 'a' ]
-    }, {
-        allowCircularReferences: true
     });
 
     var module = b.build('a', function( error, module ) {
@@ -131,7 +114,7 @@ test('build a module with a sparse circular reference (allowCircularReferences: 
         t.equals(module.dependencies[0].name, 'b');
         t.equals(module.dependencies[0].dependencies.length, 1);
         t.equals(module.dependencies[0].dependencies[0].name, 'c');
-        t.deepEquals(module.dependencies[0].dependencies[0].dependencies, []);
+        t.deepEquals(module.dependencies[0].dependencies[0].dependencies, [module]);
     } );
     t.equals(module.name, 'a');
 
