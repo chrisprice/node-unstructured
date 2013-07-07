@@ -41,8 +41,7 @@ module.exports = function(opts) {
 
         timer.start('build+analyse');
 
-        var b = build(analyse(opts));
-        async.map(entryModuleNames, b.build, function(error, entryModules) {
+        build(entryModuleNames, analyse(opts), function(error, entryModules) {
 
             if ( error ) {
                 return cb( error );
