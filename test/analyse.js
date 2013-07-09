@@ -3,6 +3,7 @@ var lookup = require('../lib/analyse/lookup');
 var analyse = require('../lib/analyse');
 var acorn = require('acorn');
 var test = require('tape');
+var util = require('util');
 
 test('find', function(t) {
     t.plan(12);
@@ -26,14 +27,14 @@ test('find', function(t) {
 });
 
 test('extract', function (t) {
-    t.plan(39);
+    t.plan(57);
 
     function extract_(source, expected) {
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
         extract(moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
-            t.deepEqual(moduleA.references, [expected]);
+            t.deepEqual(moduleA.references, util.isArray(expected) ? expected : [expected]);
         });
     }
 
@@ -51,6 +52,14 @@ test('extract', function (t) {
     extract_('a.Module.method()', 'a.Module');
     extract_('a.Module.prop = 1', 'a.Module');
     extract_('var prop = a.Module.prop', 'a.Module');
+
+    extract_('this.Module', []);
+    extract_('this.a.Module', []);
+
+    extract_('var a; a.Module', []);
+    extract_('function f(a) { a.Module; }', []);
+    extract_('function f(a) { var b; a.Module; b.Module; }', []);
+    extract_('function f(a) { function g(b) { a.Module; b.Module; } }', []);
 });
 
 test('analyse', function(t) {
