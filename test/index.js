@@ -13,5 +13,6 @@ test('bundle', function(t) {
     }, function(error, output) {
         t.error(error);
         t.equals(output, fs.readFileSync(__dirname + '/example.packed.js', 'utf8'));
+//        fs.writeFileSync(__dirname + '/example.packed.js', output, 'utf8')
     });
 });

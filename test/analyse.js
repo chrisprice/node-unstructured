@@ -78,7 +78,7 @@ test('analyse', function(t) {
     var exampleFolder = __dirname + '/example';
 
     _analyse([exampleFolder], 'not-found', undefined, []);
-    _analyse([exampleFolder], 'a.b.C', exampleFolder + '/a/b/C.js', []);
-    _analyse([exampleFolder], 'a.B', exampleFolder + '/a/B.js', ['a.b.C']);
+    _analyse([exampleFolder], 'a.b.C', exampleFolder + '/a/b/C.js', ['a.b.C']);
+    _analyse([exampleFolder], 'a.B', exampleFolder + '/a/B.js', ['a.B', 'a.b.C']);
 
 })

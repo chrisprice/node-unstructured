@@ -1,1 +1,1 @@
-var a = new a.A();
+var anA = new a.A();
