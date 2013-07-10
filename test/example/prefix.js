@@ -1,0 +1,3 @@
+/*!
+ * Some license or other
+ */

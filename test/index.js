@@ -9,6 +9,8 @@ test('bundle', function(t) {
         debug: true,
         verbose: true,
         sourceFolders: [__dirname+'/example2', __dirname+'/example'],
+        prefixOutput: [__dirname+'/example/prefix.js'],
+        suffixOutput: [__dirname+'/example/suffix.js'],
         entryPoints: ['index']
     }, function(error, output) {
         t.error(error);

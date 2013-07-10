@@ -22,11 +22,23 @@ var pack = require('./lib/pack');
 var resolve = require('./lib/resolve');
 var timer = require('./lib/timer');
 var extend = require('xtend');
+var fs = require('fs');
+
+function createModule(absolutePath, cb) {
+    fs.readFile(absolutePath, 'utf8', function(error, data) {
+        cb(error, {
+            absolutePath: absolutePath,
+            source: data
+        });
+    });
+}
 
 module.exports = function(opts, cb) {
     opts = extend({
         sourceFolders: [],
         entryPoints: [],
+        prefixOutput: [],
+        suffixOutput: [],
         analyse: async.apply(analyse, opts.sourceFolders),
         debug: false,
         verbose: false
@@ -47,10 +59,24 @@ module.exports = function(opts, cb) {
 
         timer.next('resolve', 'pack');
 
-        var packed = pack(resolvedModuleList, { debug: opts.debug });
+        var moduleList = async.parallel([
+            async.apply(async.map, opts.prefixOutput, createModule),
+            async.apply(async.map, opts.suffixOutput, createModule)
+        ], function(error, results) {
 
-        timer.stop('pack');
+            if (error) {
+                return cb(error);
+            }
 
-        cb(undefined, packed);
+            var modules = results[0].concat(resolvedModuleList, results[1]);
+
+            var packed = pack(modules, { debug: opts.debug });
+
+            timer.stop('pack');
+
+            cb(undefined, packed);
+
+        });
+
     });
 };
