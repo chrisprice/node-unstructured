@@ -24,15 +24,6 @@ var timer = require('./lib/timer');
 var extend = require('xtend');
 var fs = require('fs');
 
-function createModule(absolutePath, cb) {
-    fs.readFile(absolutePath, 'utf8', function(error, data) {
-        cb(error, {
-            absolutePath: absolutePath,
-            source: data
-        });
-    });
-}
-
 module.exports = function(opts, cb) {
     opts = extend({
         sourceFolders: [],
@@ -41,7 +32,18 @@ module.exports = function(opts, cb) {
         suffixOutput: [],
         analyse: async.apply(analyse, opts.sourceFolders),
         debug: false,
-        verbose: false
+        verbose: false,
+        prePack: function(resolvedModuleList, cb) {
+            async.parallel([
+                async.apply(async.map, opts.prefixOutput, createModule),
+                async.apply(async.map, opts.suffixOutput, createModule)
+            ], function(error, results) {
+                if (error) {
+                  return cb(error);
+                }
+                cb(undefined, results[0].concat(resolvedModuleList, results[1]));
+            })
+        }
     }, opts);
 
     timer.start('build+analyse');
@@ -59,18 +61,13 @@ module.exports = function(opts, cb) {
 
         timer.next('resolve', 'pack');
 
-        var moduleList = async.parallel([
-            async.apply(async.map, opts.prefixOutput, createModule),
-            async.apply(async.map, opts.suffixOutput, createModule)
-        ], function(error, results) {
+        opts.prePack(resolvedModuleList, function(error, moduleList) {
 
             if (error) {
                 return cb(error);
             }
 
-            var modules = results[0].concat(resolvedModuleList, results[1]);
-
-            var packed = pack(modules, { debug: opts.debug });
+            var packed = pack(moduleList, { debug: opts.debug });
 
             timer.stop('pack');
 
@@ -80,3 +77,14 @@ module.exports = function(opts, cb) {
 
     });
 };
+
+
+function createModule(absolutePath, cb) {
+  fs.readFile(absolutePath, 'utf8', function(error, data) {
+    cb(error, {
+      absolutePath: absolutePath,
+      source: data
+    });
+  });
+}
+module.exports.createModule = createModule;
