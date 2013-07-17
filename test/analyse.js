@@ -27,7 +27,7 @@ test('find', function(t) {
 });
 
 test('extract', function (t) {
-    t.plan(57);
+    t.plan(21 * 3);
 
     function extract_(source, expected) {
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
@@ -52,6 +52,9 @@ test('extract', function (t) {
     extract_('a.Module.method()', 'a.Module');
     extract_('a.Module.prop = 1', 'a.Module');
     extract_('var prop = a.Module.prop', 'a.Module');
+
+    extract_('var map; map[a.Module.getGuid()]', ['a.Module']);
+    extract_('this[a.Module.getGuid()]', ['a.Module']);
 
     extract_('this.Module', []);
     extract_('this.a.Module', []);
