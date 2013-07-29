@@ -12,6 +12,6 @@ u({
     verbose: true // log resolved source list
   }, 
   function(error, concatenatedSource) {
-    fs.writeFileSync('output.js', concatenatedSource);
+    require('fs').writeFileSync('output.js', concatenatedSource);
   });
 ```
