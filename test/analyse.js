@@ -5,12 +5,12 @@ var acorn = require('acorn');
 var test = require('tape');
 var util = require('util');
 
-test('find', function(t) {
+test('read', function(t) {
     t.plan(12);
 
     function find(sourceFolders, name, expected) {
         var moduleA = { name: name };
-        lookup.find(sourceFolders, moduleA, function(error, moduleB) {
+        lookup(sourceFolders, moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
             t.equals(moduleA.absolutePath, expected);
