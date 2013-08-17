@@ -1,5 +1,4 @@
 var test = require('tape');
-var analyse = require('../lib/analyse');
 var build = require('../lib/build');
 
 function _build(referenceMap) {

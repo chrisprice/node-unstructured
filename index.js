@@ -16,7 +16,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var async = require('async');
-var analyse = require('./lib/analyse');
+var lookup = require('./lib/analyse/lookup');
+var implicitWalker = require('./lib/analyse/implicitWalker');
 var build = require('./lib/build');
 var pack = require('./lib/pack');
 var resolve = require('./lib/resolve');
@@ -30,7 +31,7 @@ module.exports = function(opts, cb) {
         entryPoints: [],
         prefixOutput: [],
         suffixOutput: [],
-        analyse: async.apply(analyse, opts.sourceFolders),
+        analyse: async.compose(implicitWalker, async.apply(lookup, opts.sourceFolders)),
         debug: false,
         verbose: false,
         prePack: function(resolvedModuleList, cb) {
