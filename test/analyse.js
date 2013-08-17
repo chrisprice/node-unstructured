@@ -30,7 +30,7 @@ test('extract', function (t) {
     t.plan(21 * 3);
 
     function extract_(source, expected) {
-        var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }) };
+        var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }), references: [] };
         extract(moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
@@ -69,7 +69,7 @@ test('analyse', function(t) {
     t.plan(12);
 
     function _analyse(sourceFolders, name, expectedPath, expectedReferences) {
-        var moduleA = { name: name };
+        var moduleA = { name: name, references: [] };
         analyse(sourceFolders, moduleA, function(error, moduleB) {
             t.error(error);
             t.equals(moduleA, moduleB);
