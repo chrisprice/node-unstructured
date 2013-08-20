@@ -4,14 +4,14 @@ var test = require('tape');
 var util = require('util');
 
 test('explicitWalker', function (t) {
-    t.plan(4 * 3);
+    t.plan(5 * 3);
 
     function extract_(source, expected) {
         var moduleA = { source: source, ast: acorn.parse(source, { ranges:true }), references: [] };
         explicitWalker({
             lib: {
                 require: function(module, args) {
-                  module.references.push(args[0].value)
+                  module.references.push(args[0])
                 }
             }
         }, moduleA, function(error, moduleB) {
@@ -27,4 +27,7 @@ test('explicitWalker', function (t) {
 
     extract_('lib.other("a.Module")', []);
     extract_('lib.other = function(a) {}', []);
+
+    extract_('lib.require(function(a) {})', [ undefined ]);
+
 });
